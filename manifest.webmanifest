@@ -1,0 +1,12 @@
+{
+  "name": "Macro Calculator",
+  "short_name": "Macros",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0f13",
+  "theme_color": "#111318",
+  "icons": [
+    {"src": "icon.png", "sizes": "1536x1536", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

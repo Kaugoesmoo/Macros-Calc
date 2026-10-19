@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111318">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Macro Calculator</title>
+<style>
+  :root { color-scheme: dark; --bg:#0d0f13; --panel:#171a21; --panel2:#20242d; --text:#f4f5f7; --muted:#a8afbd; --line:#303541; --accent:#f2bd55; --blue:#75a9ff; --green:#68cba0; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  main { width:min(760px,100%); margin:0 auto; padding:28px 18px 44px; }
+  header { margin-bottom:22px; }
+  .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:.75rem; font-weight:750; }
+  h1 { margin:.35rem 0 .4rem; font-size:clamp(2rem,7vw,3rem); letter-spacing:-.055em; line-height:1.05; }
+  .intro { color:var(--muted); margin:0; max-width:58ch; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; margin:14px 0; }
+  .control-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  label { color:var(--muted); font-weight:600; }
+  output { font-weight:800; font-size:1.15rem; font-variant-numeric:tabular-nums; }
+  input[type=range] { display:block; width:100%; accent-color:var(--accent); cursor:pointer; margin:14px 0 8px; }
+  .range-labels { display:flex; justify-content:space-between; color:var(--muted); font-size:.78rem; }
+  .macro-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .metric { background:var(--panel2); border-radius:15px; padding:16px; min-width:0; }
+  .metric .name { color:var(--muted); font-size:.9rem; }
+  .metric .value { font-size:clamp(1.65rem,6vw,2.2rem); font-weight:850; letter-spacing:-.045em; margin:2px 0; font-variant-numeric:tabular-nums; }
+  .metric .detail { color:var(--muted); font-size:.82rem; }
+  .bar { height:7px; background:#343946; border-radius:999px; overflow:hidden; margin-top:12px; }
+  .bar span { display:block; height:100%; width:0; border-radius:999px; transition:width .15s ease; }
+  .protein span { background:var(--blue); } .carbs span { background:var(--green); } .fat span { background:var(--accent); } .fibre span { background:#c49bff; }
+  .section-title { margin:0 0 15px; font-size:1.15rem; letter-spacing:-.02em; }
+  .subtle { color:var(--muted); font-size:.88rem; }
+  .status { padding:12px 14px; border-radius:12px; background:var(--panel2); color:var(--muted); font-size:.9rem; margin-top:14px; }
+  .status strong { color:var(--text); }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+  button { border:1px solid var(--line); background:var(--panel2); color:var(--text); padding:11px 14px; border-radius:12px; font:inherit; font-weight:700; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#19140a; }
+  button:hover { filter:brightness(1.08); }
+  .note { font-size:.82rem; color:var(--muted); margin:14px 2px 0; }
+  .error { color:#ffaaa8; font-size:.9rem; margin-top:10px; }
+  @media (max-width:460px) { main {padding:22px 13px 34px;} .panel {padding:16px;} .macro-grid {gap:8px;} .metric {padding:13px;} }
+  @media print { body {background:#fff;color:#111;} .panel,.metric {background:#fff;border-color:#ddd;} .subtle,label,.metric .name,.metric .detail,.intro,.note {color:#555;} .actions,input[type=range],.range-labels {display:none;} }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Nutrition tool · v1.0</div>
+    <h1>Macro calculator<span style="color:var(--accent)">.</span></h1>
+    <p class="intro">Adjust your calories and macro settings to recalculate daily targets instantly. This page works offline once saved.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="inputs-title">
+    <h2 class="section-title" id="inputs-title">Your settings</h2>
+    <div class="control">
+      <div class="control-head"><label for="weight">Body weight</label><output id="weightOut" for="weight">75.5 kg</output></div>
+      <input id="weight" type="range" min="40" max="150" step="0.5" value="75.5">
+      <div class="range-labels"><span>40 kg</span><span>150 kg</span></div>
+    </div>
+    <div class="control" style="margin-top:24px">
+      <div class="control-head"><label for="calories">Daily calorie target</label><output id="caloriesOut" for="calories">1,963 kcal</output></div>
+      <input id="calories" type="range" min="1200" max="4000" step="25" value="1963">
+      <div class="range-labels"><span>1,200 kcal</span><span>4,000 kcal</span></div>
+    </div>
+    <div class="control" style="margin-top:24px">
+      <div class="control-head"><label for="protein">Protein target</label><output id="proteinOut" for="protein">2.0 g/kg</output></div>
+      <input id="protein" type="range" min="1.2" max="2.4" step="0.1" value="2">
+      <div class="range-labels"><span>1.2 g/kg</span><span>2.4 g/kg</span></div>
+    </div>
+    <div class="control" style="margin-top:24px">
+      <div class="control-head"><label for="fat">Calories from fat</label><output id="fatOut" for="fat">30%</output></div>
+      <input id="fat" type="range" min="20" max="35" step="1" value="30">
+      <div class="range-labels"><span>20%</span><span>35%</span></div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="reset">Reset defaults</button>
+      <button id="copy">Copy targets</button>
+      <button id="save">Save settings</button>
+    </div>
+    <p class="note">Save settings stores your current values in this browser on this device. No account or internet connection is needed.</p>
+    <div id="message" class="status" role="status" aria-live="polite">Ready. Move a slider to update your targets.</div>
+  </section>
+
+  <section class="panel" aria-labelledby="results-title">
+    <h2 class="section-title" id="results-title">Your daily targets</h2>
+    <div class="macro-grid">
+      <div class="metric protein">
+        <div class="name">Protein</div><div class="value" id="pVal">151 g</div><div class="detail" id="pDetail">604 kcal · 30.8%</div><div class="bar"><span id="pBar"></span></div>
+      </div>
+      <div class="metric carbs">
+        <div class="name">Carbohydrates</div><div class="value" id="cVal">193 g</div><div class="detail" id="cDetail">770 kcal · 39.3%</div><div class="bar"><span id="cBar"></span></div>
+      </div>
+      <div class="metric fat">
+        <div class="name">Fat</div><div class="value" id="fVal">65.4 g</div><div class="detail" id="fDetail">589 kcal · 30.0%</div><div class="bar"><span id="fBar"></span></div>
+      </div>
+      <div class="metric fibre">
+        <div class="name">Fibre reference</div><div class="value" id="fiberVal">27.5 g</div><div class="detail">14 g per 1,000 kcal</div><div class="bar"><span id="fiberBar"></span></div>
+      </div>
+    </div>
+    <div id="calorieCheck" class="status"></div>
+    <p class="note">Carbohydrates fill the remaining calories after protein and fat. Fibre is a reference target, not an extra calorie allowance. Actual food labels and tracking apps may differ slightly due to rounding and fibre-energy conventions.</p>
+  </section>
+
+  <section class="panel">
+    <h2 class="section-title">How to use this responsibly</h2>
+    <p class="subtle">The calorie target is an input—not a guarantee of a deficit. Estimate maintenance calories, choose a suitable deficit, and review your average weight trend over 2–3 weeks alongside training performance, recovery and hunger.</p>
+    <p class="subtle">This calculator is for general nutrition planning and does not replace individual medical or dietetic advice.</p>
+  </section>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const defaults = {weight:75.5, calories:1963, protein:2, fat:30};
+  const ids = ['weight','calories','protein','fat'];
+  const fmt = (n, digits=0) => Number(n).toLocaleString('en-IN',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+  function calculate() {
+    const bw = +$('weight').value, cal = +$('calories').value;
+    const proteinFactor = +$('protein').value, fatPct = +$('fat').value;
+    const p = bw * proteinFactor;
+    const fat = cal * fatPct / 100 / 9;
+    const carbs = (cal - p*4 - fat*9) / 4;
+    const fibre = cal * .014;
+    $('weightOut').textContent = `${fmt(bw,1)} kg`;
+    $('caloriesOut').textContent = `${fmt(cal)} kcal`;
+    $('proteinOut').textContent = `${fmt(proteinFactor,1)} g/kg`;
+    $('fatOut').textContent = `${fatPct}%`;
+    $('pVal').textContent = `${fmt(p)} g`;
+    $('cVal').textContent = `${fmt(Math.max(0,carbs))} g`;
+    $('fVal').textContent = `${fmt(fat,1)} g`;
+    $('fiberVal').textContent = `${fmt(fibre,1)} g`;
+    const pK = p*4, fK = fat*9, cK = carbs*4;
+    $('pDetail').textContent = `${fmt(pK)} kcal · ${fmt(pK/cal*100,1)}%`;
+    $('fDetail').textContent = `${fmt(fK)} kcal · ${fmt(fK/cal*100,1)}%`;
+    $('cDetail').textContent = carbs >= 0 ? `${fmt(cK)} kcal · ${fmt(cK/cal*100,1)}%` : 'Calorie budget exceeded';
+    $('pBar').style.width = `${Math.min(100,pK/cal*100)}%`;
+    $('fBar').style.width = `${Math.min(100,fK/cal*100)}%`;
+    $('cBar').style.width = `${Math.min(100,Math.max(0,cK/cal*100))}%`;
+    $('fiberBar').style.width = `${Math.min(100,fibre/40*100)}%`;
+    const bad = carbs < 0;
+    $('calorieCheck').innerHTML = bad
+      ? `<strong>Targets exceed your budget.</strong> Protein and fat use ${fmt(pK+fK)} kcal, more than the ${fmt(cal)} kcal target. Raise calories or lower a macro setting.`
+      : `<strong>Macro calories: ${fmt(pK+fK+cK)} kcal.</strong> ${fmt(cal)} kcal target · ${fmt(cal-bw*26)} kcal versus the original body-weight × 26 rule.`;
+    $('calorieCheck').style.color = bad ? '#ffaaa8' : 'var(--muted)';
+    return {bw,cal,proteinFactor,fatPct,p,carbs,fat,fibre,bad};
+  }
+  ids.forEach(id => $(id).addEventListener('input', () => { calculate(); $('message').textContent = 'Targets updated. Save settings if you want to keep these values in this browser.'; }));
+  $('reset').addEventListener('click', () => { Object.entries(defaults).forEach(([id,v]) => $(id).value=v); calculate(); $('message').textContent='Defaults restored. Press Save settings to keep them.'; });
+  $('save').addEventListener('click', () => {
+    try { const values = Object.fromEntries(ids.map(id => [id,$(id).value])); localStorage.setItem('macroCalculatorSettings',JSON.stringify(values)); $('message').textContent='Settings saved in this browser on this device.'; }
+    catch(e) { $('message').textContent='Browser storage is unavailable. Your current calculations still work, but settings could not be saved.'; }
+  });
+  $('copy').addEventListener('click', async () => {
+    const r=calculate();
+    const content = r.bad ? `Calories: ${r.cal} kcal\nProtein: ${fmt(r.p)} g\nFat: ${fmt(r.fat,1)} g\nCarbohydrates exceed calorie budget.` :
+      `Calories: ${r.cal} kcal\nProtein: ${fmt(r.p)} g\nCarbohydrates: ${fmt(r.carbs)} g\nFat: ${fmt(r.fat,1)} g\nFibre: ${fmt(r.fibre,1)} g`;
+    try { await navigator.clipboard.writeText(content); $('message').textContent='Macro targets copied to clipboard.'; }
+    catch(e) { $('message').textContent=content; }
+  });
+  try {
+    const saved = JSON.parse(localStorage.getItem('macroCalculatorSettings') || 'null');
+    if (saved) ids.forEach(id => { if(saved[id] !== undefined) $(id).value=saved[id]; });
+  } catch(e) {}
+  calculate();
+})();
+</script>
+</body>
+</html>
